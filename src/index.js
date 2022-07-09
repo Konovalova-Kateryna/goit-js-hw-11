@@ -1,53 +1,116 @@
 import './css/styles.css';
-import Notiflix from 'notiflix'
+
 import SimpleLightbox from 'simplelightbox';
+import "simplelightbox/dist/simple-lightbox.min.css"
 
-import { fetchPictures, resetPage } from './js/fetch_pictures';
 import { createPictureCard } from './js/create_card';
-
+import { emptyRequest, successfulRequest, endOfSearch, failedRequest } from './js/notify';
+import { fetchPicturesAsync, resetPage } from './js/fetchPictures_async';
 
 const searchForm = document.querySelector('.search-form');
 const galleryContainer = document.querySelector('.gallery');
-const loadMoreBtn = document.querySelector('.load-more');
-
+const goToBtn = document.querySelector('.up-btn');
 let searchQuery = "";
 
 searchForm.addEventListener('submit', onSearch);
-loadMoreBtn.addEventListener('click', onLoadMore);
+goToBtn.addEventListener('click', goToStart);
+
+let gall = new SimpleLightbox('.gallery a', {
+        
+});
+window.addEventListener('scroll', () => {
+    if (scrollY > 300) {
+        goToBtn.classList.remove('is-hidden');
+    } else if (scrollY < 300) {
+        goToBtn.classList.add('is-hidden')
+    }
+});
+
+function goToStart(evt) {
+    evt.preventDefault();
+    window.scrollTo(0,0);
+}
 
 function onSearch(evt) {
     evt.preventDefault();
 
-    searchQuery = evt.currentTarget.elements.searchQuery.value;
+    searchQuery = evt.currentTarget.elements.searchQuery.value.trim();
 
     if (searchQuery === "") {
-        Notiflix.Notify.failure('Пустая строка. Что будем искать?')
+        emptyRequest();
+        return;
     }
     resetPage();
-    loadMoreBtn.classList.remove('is-visible');
+    getGalleryMarkup()
+}
 
-    fetchPictures(searchQuery).then(({ pictures, totalHits }) => {
-        if (pictures.length === 0) {
-            Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+async function getGalleryMarkup() {
+    try {
+        const galleryPage = await fetchPicturesAsync(searchQuery);
+        const markup = galleryPage.pictures;
+        const totalHits = galleryPage.totalHits;
+       
+         if (markup.length === 0) {
+            failedRequest();
+            galleryContainer.innerHTML = "";
             searchForm.reset();
-            return
+            return;
         }
-        Notiflix.Notify.info(`Hooray! We found ${totalHits} images.`)
-        galleryContainer.innerHTML = createPictureCard(pictures);
-        loadMoreBtn.classList.add('is-visible');
-        
-        })
+        galleryContainer.innerHTML = createPictureCard(markup);
+        successfulRequest(totalHits);
+        gall.refresh();
+        toObserve();
+        searchForm.reset();
+    
+    }
+    catch (error) { console.log(error.message) };
 };
 
-function onLoadMore() {
-
-    fetchPictures(searchQuery).then(({page, pictures, lastPage}) => {
-        galleryContainer.insertAdjacentHTML('beforeend', createPictureCard(pictures));
-        if(page === lastPage) {
-            loadMoreBtn.classList.remove('is-visible');
-            Notiflix.Notify.warning("We're sorry, but you've reached the end of search results.")
+async function onLoadMore() {
+    try {
+        const newGalleryPage = await fetchPicturesAsync(searchQuery);
+        const page = newGalleryPage.page;
+        const markup = newGalleryPage.pictures;
+        const lastPage = newGalleryPage.lastPage;
+        if(page > lastPage) {
+        observer.unobserve(document.querySelector('.scroll-area'));
+            endOfSearch();
+            return;
+        }
+        galleryContainer.insertAdjacentHTML('beforeend', createPictureCard(markup));
+        gall.refresh();
+                
+    } catch (error) {
+        console.log(error.message);
+    }
+    
+};
+    
+const options = {
+    rootMargin: "200px",
+    threshold: 1.0,
+}
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            onLoadMore();
+            
+            console.log('INTERSECTION!!!');
         }
     });
-};
+}, options);
+function toObserve() {     
+        observer.observe(document.querySelector('.scroll-area'));
+}
 
+galleryContainer.addEventListener('click', galleryContainerClick);
+
+function galleryContainerClick(evt) {
+    evt.preventDefault();
+
+        if (!evt.target.dataset.source) {
+        return;
+        }
+    console.log(galleryContainer);
+    };
 
