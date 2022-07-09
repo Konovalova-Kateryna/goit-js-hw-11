@@ -52,8 +52,17 @@ body {
     flex-direction: column;
   text-decoration: none;
   border-radius: 4px;
+
+  transition-property: transform;
+    transition-duration: 500ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   
 }
+.gallery-link:hover {
+  transform: scale(1.05);
+  
+}
+
 .info-item {
   display: flex;
   flex-wrap: wrap;
@@ -75,6 +84,7 @@ body {
   padding-bottom: 10px;
   text-align: center;
   background-color: #a900ff;
+  z-index: 10;
 }
 .search-form input {
   padding-left: 10px;

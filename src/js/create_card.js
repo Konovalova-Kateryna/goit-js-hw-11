@@ -2,7 +2,8 @@ export const createPictureCard = (pictures) => {
 return pictures
     .map(
         ({ webformatURL, largeImageURL,tags, likes, views, comments, downloads }) => 
-        `<a class="gallery-link" href="${largeImageURL}">
+        `
+        <a class="gallery-link" href="${largeImageURL}">
         <img class="photo-img" src="${webformatURL}" alt="${tags}" loading="lazy" />
         <div class="info">
             <p class="info-item">
@@ -19,6 +20,7 @@ return pictures
             </p>
         </div>
         </a>
+        
         `
     )
     .join("");

@@ -49,8 +49,8 @@ async function getGalleryMarkup() {
         const galleryPage = await fetchPicturesAsync(searchQuery);
         const markup = galleryPage.pictures;
         const totalHits = galleryPage.totalHits;
-       
-         if (markup.length === 0) {
+    
+        if (markup.length === 0) {
             failedRequest();
             galleryContainer.innerHTML = "";
             searchForm.reset();
@@ -94,7 +94,6 @@ const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             onLoadMore();
-            
             console.log('INTERSECTION!!!');
         }
     });
